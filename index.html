@@ -1,0 +1,151 @@
+
+<!DOCTYPE HTML>
+<html>
+    <body onload="showQuestion()">
+    <h1 id="title">秘書検定二級漢字</h1>
+    <div id="question"></div>
+    <div id="answerForm">
+        <input type="text" id="answer">
+        <button onclick="judge()">回答する</button>
+    </div>
+    <div id="retryButton" style="display:none;">
+        <button onclick="retryIncorrectQuestions()">間違えた問題をやり直す</button>
+    </div>
+    <div id="resultMessage"></div>
+    <img id="resultImage" src="">
+</body>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+    <meta http-equiv="Content-Security-Policy" content="default-src * data: gap: content: https://ssl.gstatic.com; style-src * 'unsafe-inline'; script-src * 'unsafe-inline' 'unsafe-eval'">
+    <script src="components/loader.js"></script>
+    <script src="classic.js"></script>
+    <link rel="stylesheet" href="components/loader.css">
+    <link rel="stylesheet" href="css/style.css">
+    <script>
+        // 問題番号
+        let no = 0;
+        // 正解数
+        let score = 0;
+        // 間違えた問題を記録するリスト
+        let incorrectList = [];
+        // 単語リスト
+        let wordList = [
+            { japanese: "相手の会社を表す敬語で書き言葉として使われる。", english: "貴社" },
+            { japanese: "相手の会社を表す敬語で面接などで話すときに使われる", english: "御社" },
+            { japanese: "自分の属する会社の謙称", english: "弊社" },
+            { japanese: "男が男の相手を敬って指す語", english: "貴殿" },
+            { japanese: "時候の挨拶に置き換えることができ、「このごろ」、「現在」という意味", english: "時下" },
+            { japanese: "ビジネスシ-ンにおいては、いつも依頼・注文をしてくれる取引先や顧客", english: "愛顧" },
+            { japanese: "健康がすぐれて元気なこと。すこやか。", english: "健勝" },
+            { japanese: "書簡文で、相手が健康でしあわせに暮らしていることをよろこぶ、あいさつ語", english: "清祥" },
+            { japanese: "受けることをへりくだって言う語。", english: "拝受" },
+            { japanese: "目上の人からもらう。いただく。", english: "目上の人からもらう。いただく。" },
+            { japanese: "金額・物品・書類等をよく調べて受け取ること。", english: "査収" },
+            { japanese: "だん。つね日ごろ。へいぜい。などを指す言葉", english: "平素" },
+            { japanese: "謝礼の際の表書き", english: "御礼" },
+            { japanese: "他が物を（自分に）贈ることを敬って言う語。恵与。恵投", english: "恵贈" },
+            { japanese: "盛んな企て。盛大な事業。", english: "盛挙" },
+            { japanese: "よい日。めでたい日", english: "佳日" },
+            { japanese: "夏の暑さの厳しい期間", english: "暑中" },
+            { japanese: "物事の関係づけ。", english: "由" },
+            { japanese: "手紙の始めに書く、あいさつ語。つつしんで申し上げますの意。", english: "謹啓" },
+            { japanese: "よろこび祝うべき事と悲しみとむらうべき事。", english: "慶弔" },
+            { japanese: "和風月名で1月は何という", english: "睦月" },
+            { japanese: "和風月名２月は何という", english: "如月" },
+            { japanese: "和風月名３月は何という？", english: "弥生" },
+            { japanese: "和風月名４月は何という？", english: "卯月" },
+            { japanese: "和風月名５月は何という？", english: "皐月" }, 
+            { japanese: "和風月名６月は何という？", english: "水無月" },
+            { japanese: "和風月名７月は何という？", english: "文月" },
+            { japanese: "和風月名８月は何という？", english: "葉月" },
+            { japanese: "和風月名９月は何という？", english: "長月" },
+            { japanese: "和風月名1０月は何という？", english: "神無月" },
+            { japanese: "和風月名1１月は何という？", english: "霜月" },
+            { japanese: "和風月名1２月は何という？", english: "師走" },
+            { japanese: "一般的には問題となっている事、調査や審議をすべき事を指すが、ビジネスシーンでは業務に関わる事項を指す。", english: "案件" },
+            { japanese: "上司が業務や権限の一部を部下に委ねること", english: "委譲" },
+            { japanese: "商品やサービスの販売時に加え、企業との取引で発生した代金を受け取る権利のこと。", english: "売掛金" },
+            { japanese: "個人や企業に提供する商品として形にならないサービスを指す。", english: "役務" },
+            { japanese: "印鑑を押すこと", english: "押印" },
+            { japanese: "惜しみながらも手放したり、省略すること。", english: "割愛" },
+            { japanese: "1年間を半分に分けたうちの前半部分のこと。", english: "上期" },
+            { japanese: "データ情報や詳細内容がすでに提示されていること。", english: "既出" },
+            { japanese: "ビジネス上で競争する相手となる企業や商材のこと", english: "競合" },
+            { japanese: "相手の話を否定せず、注意深く耳を傾けること", english: "傾聴" },
+            { japanese: "納品された物に対し、発注した時の数量や品質、仕様などが正しいものかを検査し確認してから受け取ること。", english: "検収" },
+            { japanese: "後に証拠となる約束の言葉", english: "言質" },
+            { japanese: "ある役職の人を解任して別の人に入れ替えること。", english: "更迭" },
+            { japanese: "1年を4等分した3カ月区切りの期間のこと。", english: "四半期" },
+            { japanese: "商品を市場へ出す、また製品などを会社から顧客や市場へ出すこと。", english: "出荷" },
+            { japanese: "非常に急ぐこと。かしこまったものになるためビジネスの場で使用されることが多い。", english: "早急" },
+            { japanese: "しばらくの間という意味", english: "暫時" },
+         
+         
+             
+            // 他の問題も追加...
+        ];
+
+        // 問題を表示する
+        function showQuestion() {
+            if (no < wordList.length) {
+                // 次の問題がある場合は、表示する
+                document.getElementById("question").innerHTML = wordList[no].japanese;
+            } else {
+                // 全問終了したら、成績を発表する
+                document.getElementById("question").innerHTML = score + "/" + wordList.length;
+                document.getElementById("answerForm").style.display = "none";
+
+                // リトライボタンを表示する
+                if (incorrectList.length > 0) {
+                    document.getElementById("retryButton").style.display = "block";
+                }
+
+                if (score == wordList.length) {
+                    document.getElementById("resultMessage").innerHTML = "全問正解！よくできました！";
+                    document.getElementById("resultImage").src = "gold.png";
+                } else if (score >= wordList.length * 0.6) {
+                    document.getElementById("resultMessage").innerHTML = "惜しい！あともう一歩でした！";
+                    document.getElementById("resultImage").src = "silver.png";
+                } else {
+                    document.getElementById("resultMessage").innerHTML = "もう少しがんばりましょう泣";
+                    document.getElementById("resultImage").src = "bronze.png";
+                }
+            }
+        }
+
+        // 入力された回答の正誤判定を行う
+        function judge() {
+            let answer = document.getElementById("answer").value;
+            if (answer == wordList[no].english) {
+                alert("正解です！次もこの調子で頑張って！");
+                score++;
+            } else {
+                alert("残念！不正解です。正解は「" + wordList[no].english + "」です。");
+                incorrectList.push(wordList[no]);  // 間違えた問題をリストに追加
+            }
+
+            // 次の問題を表示
+            no++;
+            showQuestion();
+            document.getElementById("answer").value = "";  // 入力欄をクリア
+        }
+
+        // 間違えた問題だけをやり直す
+        function retryIncorrectQuestions() {
+            if (incorrectList.length > 0) {
+                wordList = incorrectList;  // 間違えた問題だけを新しい問題リストにする
+                no = 0;
+                score = 0;
+                incorrectList = [];
+                document.getElementById("answerForm").style.display = "block";
+                document.getElementById("retryButton").style.display = "none";
+                document.getElementById("resultMessage").innerHTML = "";
+                document.getElementById("resultImage").src = "";
+                showQuestion();
+            }
+        }
+    </script>
+  
+</head>
